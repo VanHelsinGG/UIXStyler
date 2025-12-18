@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UIXStyler</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="scripts/main.js" defer></script>
+    <link rel="stylesheet" href="css/main.css">
 </head>
 
 <body class="w-screen h-screen bg-zinc-900 text-zinc-200">
@@ -17,7 +19,7 @@
                 Elements
             </h2>
 
-            <button id="element-paragraph" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 cursor-pointer hover:bg-zinc-700 hover:border-zinc-600 transition select-none text-center ">
+            <button data-element="p" class="element w-full bg-zinc-900 shadown-sm border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 cursor-pointer hover:bg-zinc-700 hover:border-zinc-600 transition select-none text-center ">
                 Paragraph
             </button>
         </aside>
