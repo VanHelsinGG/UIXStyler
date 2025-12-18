@@ -1,12 +1,42 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UIXStyler</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body class="bg-gray-800 rounded-lg px-6 py-8 ring shadow-xl ring-gray-900 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-3xl font-bold">
-    Hello World!
+
+<body class="w-screen h-screen bg-zinc-900 text-zinc-200">
+    <main class="flex w-full h-full gap-3 p-3">
+
+        <!-- Elements - esquerda -->
+        <aside class="elements-container w-1/5 h-full bg-zinc-800 rounded-xl border border-zinc-700 shadow-lg p-3">
+            <h2 class="text-lg font-semibold text-zinc-300 mb-4 w-full text-center">
+                Elements
+            </h2>
+
+            <button id="element-paragraph" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 cursor-pointer hover:bg-zinc-700 hover:border-zinc-600 transition select-none text-center ">
+                Paragraph
+            </button>
+        </aside>
+
+        <!-- Page - centro -->
+        <section class="page-container w-3/5 h-full bg-zinc-950 rounded-xl border border-zinc-700 shadow-inner p-4">
+            <div class="w-full h-full rounded-lg bg-zinc-900 border border-dashed border-zinc-700 flex items-center justify-center text-zinc-500">
+                Page Canvas
+            </div>
+        </section>
+
+        <!-- Properties - direita -->
+        <aside class="properties-container w-1/5 h-full bg-zinc-800 rounded-xl border border-zinc-700 shadow-lg p-3">
+            <h2 class="text-lg text-center w-full font-semibold text-zinc-300 mb-2">
+                Properties
+            </h2>
+        </aside>
+
+    </main>
 </body>
+
 </html>
