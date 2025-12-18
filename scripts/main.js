@@ -13,7 +13,7 @@ const state = {
 // ==============================
 const dom = {
     paletteElements: document.querySelectorAll('.element'),
-    pageCanvas: document.querySelector('.canvas-inner') // 🔥 canvas real
+    pageCanvas: document.querySelector('.canvas-inner')
 };
 
 // ==============================
@@ -99,7 +99,9 @@ function initCanvasSelection() {
 
     dom.pageCanvas.addEventListener('click', (event) => {
         const target = event.target.closest('.builder-element');
-        if (!target) return;
+        if (!target) {
+            clearCanvasSelection();
+        }
 
         selectCanvasElement(target);
     });
