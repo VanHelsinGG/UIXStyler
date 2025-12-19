@@ -1,10 +1,9 @@
 // ==============================
-// State
+// GLOBAL STATE
 // ==============================
 const state = {
-    selectedPaletteElement: null,
-    selectedCanvasElement: null,
     createdElements: [],
+    selectedCanvasElement: null,
     draggingElement: null
 };
 
@@ -17,29 +16,57 @@ const dom = {
 };
 
 // ==============================
-// Properties DOM
+// PROPERTIES DOM
 // ==============================
 const properties = {
     type: document.querySelector('#properties-type'),
     id: document.querySelector('#properties-id'),
-    text: document.querySelector('#properties-text')
+    text: document.querySelector('#properties-text'),
+    textColor: document.querySelector('#properties-text-color'),
+    fontSize: document.querySelector('#properties-font-size')
 };
 
 // ==============================
-// Utils
+// ELEMENT SCHEMAS (CORE)
+// ==============================
+const ELEMENT_SCHEMAS = {
+    p: {
+        text: {
+            default: 'This is a paragraph',
+            apply: (el, value) => el.textContent = value
+        },
+        textColor: {
+            default: '#000000',
+            apply: (el, value) => el.style.color = value
+        },
+        fontSize: {
+            default: 16,
+            apply: (el, value) => el.style.fontSize = `${value}px`
+        }
+    }
+};
+
+// ==============================
+// UTILS
 // ==============================
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
 }
 
+function getSelectedElementState() {
+    if (!state.selectedCanvasElement) return null;
+    return state.createdElements.find(
+        e => e.id === state.selectedCanvasElement.dataset.id
+    );
+}
+
 // ==============================
-// Selection
+// SELECTION
 // ==============================
 function clearCanvasSelection() {
-    if (state.selectedCanvasElement) {
-        state.selectedCanvasElement.classList.remove('canvas-selected');
-        state.selectedCanvasElement = null;
-    }
+    if (!state.selectedCanvasElement) return;
+    state.selectedCanvasElement.classList.remove('canvas-selected');
+    state.selectedCanvasElement = null;
 }
 
 function selectCanvasElement(el) {
@@ -49,41 +76,35 @@ function selectCanvasElement(el) {
 }
 
 // ==============================
-// Element creation
+// ELEMENT CREATION
 // ==============================
 function createElement(tagName) {
     const el = document.createElement(tagName);
-    el.textContent = `This is a ${tagName} element.`;
-
     el.classList.add(
         'builder-element',
-        'inline-block',
         'absolute',
+        'inline-block',
         'px-2',
         'py-1',
         'text-zinc-950'
     );
-
     return el;
 }
 
-// ==============================
-// Palette handler
-// ==============================
-function onPaletteElementClick(paletteElement) {
-    const tagName = paletteElement.dataset.element;
+function createElementState(tagName, el) {
+    const schema = ELEMENT_SCHEMAS[tagName] || {};
+    const styles = {};
 
-    if (state.createdElements.length === 0) {
-        dom.pageCanvas.innerHTML = '';
-    }
+    Object.entries(schema).forEach(([key, config]) => {
+        styles[key] = config.default;
+        config.apply(el, config.default);
+    });
 
-    const el = createElement(tagName);
-
-    const elementState = {
+    return {
         id: crypto.randomUUID(),
         el,
-        dataSet: tagName.toLowerCase(),
-        text: el.textContent,
+        type: tagName,
+        styles,
         position: {
             x: 0,
             y: 0,
@@ -93,6 +114,20 @@ function onPaletteElementClick(paletteElement) {
             startY: 0
         }
     };
+}
+
+// ==============================
+// PALETTE HANDLER
+// ==============================
+function onPaletteElementClick(paletteElement) {
+    const tagName = paletteElement.dataset.element.toLowerCase();
+
+    if (state.createdElements.length === 0) {
+        dom.pageCanvas.innerHTML = '';
+    }
+
+    const el = createElement(tagName);
+    const elementState = createElementState(tagName, el);
 
     el.dataset.id = elementState.id;
 
@@ -101,36 +136,33 @@ function onPaletteElementClick(paletteElement) {
 }
 
 // ==============================
-// Drag & Drop
+// DRAG & DROP
 // ==============================
 function initDragAndDrop() {
-    dom.pageCanvas.addEventListener('mousedown', (event) => {
-        const target = event.target.closest('.builder-element');
+    dom.pageCanvas.addEventListener('mousedown', (e) => {
+        const target = e.target.closest('.builder-element');
         if (!target) return;
 
-        const elementState = state.createdElements.find(e => e.el === target);
+        const elementState = state.createdElements.find(el => el.el === target);
         if (!elementState) return;
 
         state.draggingElement = elementState;
 
-        elementState.position.mouseX = event.clientX;
-        elementState.position.mouseY = event.clientY;
+        elementState.position.mouseX = e.clientX;
+        elementState.position.mouseY = e.clientY;
         elementState.position.startX = elementState.position.x;
         elementState.position.startY = elementState.position.y;
     });
 
-    document.addEventListener('mousemove', (event) => {
+    document.addEventListener('mousemove', (e) => {
         if (!state.draggingElement) return;
 
         const elState = state.draggingElement;
         const el = elState.el;
         const canvasRect = dom.pageCanvas.getBoundingClientRect();
 
-        const dx = event.clientX - elState.position.mouseX;
-        const dy = event.clientY - elState.position.mouseY;
-
-        let x = elState.position.startX + dx;
-        let y = elState.position.startY + dy;
+        let x = elState.position.startX + (e.clientX - elState.position.mouseX);
+        let y = elState.position.startY + (e.clientY - elState.position.mouseY);
 
         const maxX = canvasRect.width - el.offsetWidth;
         const maxY = canvasRect.height - el.offsetHeight;
@@ -151,11 +183,11 @@ function initDragAndDrop() {
 }
 
 // ==============================
-// Canvas selection
+// CANVAS SELECTION
 // ==============================
 function initCanvasSelection() {
-    dom.pageCanvas.addEventListener('click', (event) => {
-        const target = event.target.closest('.builder-element');
+    dom.pageCanvas.addEventListener('click', (e) => {
+        const target = e.target.closest('.builder-element');
 
         if (!target) {
             clearCanvasSelection();
@@ -163,8 +195,10 @@ function initCanvasSelection() {
             return;
         }
 
-        const id = target.dataset.id;
-        const elementState = state.createdElements.find(e => e.id === id);
+        const elementState = state.createdElements.find(
+            el => el.id === target.dataset.id
+        );
+
         if (!elementState) return;
 
         selectCanvasElement(target);
@@ -173,47 +207,57 @@ function initCanvasSelection() {
 }
 
 // ==============================
-// Properties logic
+// PROPERTIES LOGIC
 // ==============================
-function initPropertiesListeners() {
-    properties.text.addEventListener('input', (event) => {
-        const el = state.selectedCanvasElement;
-        if (!el) return;
-
-        const id = el.dataset.id;
-        const elementState = state.createdElements.find(e => e.id === id);
-        if (!elementState) return;
-
-        elementState.text = event.target.value;
-        el.textContent = event.target.value;
-    });
-}
-
 function showPropertiesWindow(elementState) {
-    properties.type.value = elementState.dataSet;
+    properties.type.value = elementState.type;
     properties.type.disabled = true;
 
     properties.id.value = elementState.id;
     properties.id.disabled = true;
 
-    if (elementState.dataSet === 'p') {
-        properties.text.disabled = false;
-        properties.text.value = elementState.el.textContent;
-    } else {
-        properties.text.value = '';
-        properties.text.disabled = true;
-    }
+    const schema = ELEMENT_SCHEMAS[elementState.type];
+
+    Object.entries(properties).forEach(([key, input]) => {
+        if (key === 'type' || key === 'id') return;
+
+        if (!schema[key]) {
+            input.value = '';
+            input.disabled = true;
+            return;
+        }
+
+        input.disabled = false;
+        input.value = elementState.styles[key];
+    });
 }
 
 function clearPropertiesWindow() {
-    properties.type.value = '';
-    properties.id.value = '';
-    properties.text.value = '';
-    properties.text.disabled = true;
+    Object.values(properties).forEach(input => {
+        input.value = '';
+        input.disabled = true;
+    });
+}
+
+function initPropertiesListeners() {
+    Object.entries(properties).forEach(([key, input]) => {
+        if (!input || key === 'type' || key === 'id') return;
+
+        input.addEventListener('input', (e) => {
+            const elementState = getSelectedElementState();
+            if (!elementState) return;
+
+            const schema = ELEMENT_SCHEMAS[elementState.type];
+            if (!schema[key]) return;
+
+            elementState.styles[key] = e.target.value;
+            schema[key].apply(elementState.el, e.target.value);
+        });
+    });
 }
 
 // ==============================
-// Init
+// INIT
 // ==============================
 function initPalette() {
     dom.paletteElements.forEach(el => {
