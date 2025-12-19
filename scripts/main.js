@@ -17,12 +17,24 @@ const dom = {
 };
 
 // ==============================
+// Properties DOM
+// ==============================
+const properties = {
+    type: document.querySelector('#properties-type'),
+    id: document.querySelector('#properties-id'),
+    text: document.querySelector('#properties-text')
+};
+
+// ==============================
 // Utils
 // ==============================
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
 }
 
+// ==============================
+// Selection
+// ==============================
 function clearCanvasSelection() {
     if (state.selectedCanvasElement) {
         state.selectedCanvasElement.classList.remove('canvas-selected');
@@ -30,31 +42,23 @@ function clearCanvasSelection() {
     }
 }
 
-function selectCanvasElement(element) {
+function selectCanvasElement(el) {
     clearCanvasSelection();
-    element.classList.add('canvas-selected');
-    state.selectedCanvasElement = element;
+    el.classList.add('canvas-selected');
+    state.selectedCanvasElement = el;
 }
 
-function setPaletteSelection(element) {
-    dom.paletteElements.forEach(el => {
-        el.classList.remove('bg-zinc-700', 'border-zinc-600');
-        el.classList.add('bg-zinc-900', 'border-zinc-700');
-    });
-
-    element.classList.add('bg-zinc-700', 'border-zinc-600');
-    element.classList.remove('bg-zinc-900', 'border-zinc-700');
-}
-
+// ==============================
+// Element creation
+// ==============================
 function createElement(tagName) {
     const el = document.createElement(tagName);
     el.textContent = `This is a ${tagName} element.`;
+
     el.classList.add(
         'builder-element',
+        'inline-block',
         'absolute',
-        'inline-block', 
-        'w-auto',    
-        'max-w-max', 
         'px-2',
         'py-1',
         'text-zinc-950'
@@ -64,24 +68,25 @@ function createElement(tagName) {
 }
 
 // ==============================
-// Handlers
+// Palette handler
 // ==============================
 function onPaletteElementClick(paletteElement) {
     const tagName = paletteElement.dataset.element;
 
-    state.selectedPaletteElement = paletteElement;
-    setPaletteSelection(paletteElement);
+    if (state.createdElements.length === 0) {
+        dom.pageCanvas.innerHTML = '';
+    }
 
-    const newElement = createElement(tagName);
-
-    dom.pageCanvas.replaceChildren(newElement);
+    const el = createElement(tagName);
 
     const elementState = {
-        el: newElement,
         id: crypto.randomUUID(),
+        el,
+        dataSet: tagName.toLowerCase(),
+        text: el.textContent,
         position: {
-            xOffset: 0,
-            yOffset: 0,
+            x: 0,
+            y: 0,
             mouseX: 0,
             mouseY: 0,
             startX: 0,
@@ -89,23 +94,16 @@ function onPaletteElementClick(paletteElement) {
         }
     };
 
+    el.dataset.id = elementState.id;
+
+    dom.pageCanvas.appendChild(el);
     state.createdElements.push(elementState);
 }
 
 // ==============================
-// Canvas delegation
+// Drag & Drop
 // ==============================
-function initCanvasSelection() {
-
-    dom.pageCanvas.addEventListener('click', (event) => {
-        const target = event.target.closest('.builder-element');
-        if (!target) {
-            clearCanvasSelection();
-        }
-
-        selectCanvasElement(target);
-    });
-
+function initDragAndDrop() {
     dom.pageCanvas.addEventListener('mousedown', (event) => {
         const target = event.target.closest('.builder-element');
         if (!target) return;
@@ -117,23 +115,22 @@ function initCanvasSelection() {
 
         elementState.position.mouseX = event.clientX;
         elementState.position.mouseY = event.clientY;
-
-        elementState.position.startX = elementState.position.xOffset;
-        elementState.position.startY = elementState.position.yOffset;
+        elementState.position.startX = elementState.position.x;
+        elementState.position.startY = elementState.position.y;
     });
 
     document.addEventListener('mousemove', (event) => {
-        const elementState = state.draggingElement;
-        if (!elementState) return;
+        if (!state.draggingElement) return;
 
+        const elState = state.draggingElement;
+        const el = elState.el;
         const canvasRect = dom.pageCanvas.getBoundingClientRect();
-        const el = elementState.el;
 
-        let dx = event.clientX - elementState.position.mouseX;
-        let dy = event.clientY - elementState.position.mouseY;
+        const dx = event.clientX - elState.position.mouseX;
+        const dy = event.clientY - elState.position.mouseY;
 
-        let x = elementState.position.startX + dx;
-        let y = elementState.position.startY + dy;
+        let x = elState.position.startX + dx;
+        let y = elState.position.startY + dy;
 
         const maxX = canvasRect.width - el.offsetWidth;
         const maxY = canvasRect.height - el.offsetHeight;
@@ -141,10 +138,11 @@ function initCanvasSelection() {
         x = clamp(x, 0, maxX);
         y = clamp(y, 0, maxY);
 
-        el.style.transform = `translate(${x}px, ${y}px)`;
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
 
-        elementState.position.xOffset = x;
-        elementState.position.yOffset = y;
+        elState.position.x = x;
+        elState.position.y = y;
     });
 
     document.addEventListener('mouseup', () => {
@@ -153,15 +151,77 @@ function initCanvasSelection() {
 }
 
 // ==============================
+// Canvas selection
+// ==============================
+function initCanvasSelection() {
+    dom.pageCanvas.addEventListener('click', (event) => {
+        const target = event.target.closest('.builder-element');
+
+        if (!target) {
+            clearCanvasSelection();
+            clearPropertiesWindow();
+            return;
+        }
+
+        const id = target.dataset.id;
+        const elementState = state.createdElements.find(e => e.id === id);
+        if (!elementState) return;
+
+        selectCanvasElement(target);
+        showPropertiesWindow(elementState);
+    });
+}
+
+// ==============================
+// Properties logic
+// ==============================
+function initPropertiesListeners() {
+    properties.text.addEventListener('input', (event) => {
+        const el = state.selectedCanvasElement;
+        if (!el) return;
+
+        const id = el.dataset.id;
+        const elementState = state.createdElements.find(e => e.id === id);
+        if (!elementState) return;
+
+        elementState.text = event.target.value;
+        el.textContent = event.target.value;
+    });
+}
+
+function showPropertiesWindow(elementState) {
+    properties.type.value = elementState.dataSet;
+    properties.type.disabled = true;
+
+    properties.id.value = elementState.id;
+    properties.id.disabled = true;
+
+    if (elementState.dataSet === 'p') {
+        properties.text.disabled = false;
+        properties.text.value = elementState.el.textContent;
+    } else {
+        properties.text.value = '';
+        properties.text.disabled = true;
+    }
+}
+
+function clearPropertiesWindow() {
+    properties.type.value = '';
+    properties.id.value = '';
+    properties.text.value = '';
+    properties.text.disabled = true;
+}
+
+// ==============================
 // Init
 // ==============================
 function initPalette() {
-    dom.paletteElements.forEach(element => {
-        element.addEventListener('click', () =>
-            onPaletteElementClick(element)
-        );
+    dom.paletteElements.forEach(el => {
+        el.addEventListener('click', () => onPaletteElementClick(el));
     });
 }
 
 initPalette();
 initCanvasSelection();
+initDragAndDrop();
+initPropertiesListeners();
