@@ -301,7 +301,11 @@ function showPropertiesWindow(elementState) {
 
 function clearPropertiesWindow() {
     Object.values(properties).forEach(input => {
-        input.value = '';
+        if(input.attributes.type === 'color') {
+            input.value = '#000000';
+        } else {
+            input.value = '';
+        }
         input.disabled = true;
     });
 }
