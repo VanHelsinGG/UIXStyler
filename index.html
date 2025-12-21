@@ -18,10 +18,13 @@
             <h2 class="text-lg font-semibold text-zinc-300 mb-4 text-center select-none">
                 Elements
             </h2>
-
             <button data-element="p"
                 class="element w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm hover:bg-zinc-700 transition">
                 Paragraph
+            </button>
+            <button data-element="input"
+                class="element w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm hover:bg-zinc-700 transition">
+                Input
             </button>
         </aside>
 
@@ -49,9 +52,9 @@
                 <h3 class="text-md text-center font-semibold select-none text-zinc-300">
                     General
                 </h3>
-                <div id="properties-type-container" class="bg-zinc-950 flex w-full">
-                    <label class="text-sm w-1/2 text-center border border-zinc-700 font-semibold">Type</label>
-                    <input type="text" name="properties-type" id="properties-type"
+                <div id="properties-element-container" class="bg-zinc-950 flex w-full">
+                    <label class="text-sm w-1/2 text-center border border-zinc-700 font-semibold">Element</label>
+                    <input type="text" name="properties-element" id="properties-element"
                         class="text-zinc-500 w-1/2 border border-zinc-700 focus:outline-none focus:ring-0 focus:border-zinc-700"
                         disabled>
                 </div>
@@ -66,6 +69,16 @@
                     <input type="text" name="properties-text" id="properties-text"
                         class="w-1/2 border border-zinc-700 focus:outline-none focus:ring-0 focus:border-zinc-700">
                 </div>
+                <div id="properties-value-container" class="bg-zinc-950 flex w-full">
+                    <label class="text-sm w-1/2 text-center border border-zinc-700 font-semibold">Value</label>
+                    <input type="text" name="properties-value" id="properties-value"
+                        class="w-1/2 border border-zinc-700 focus:outline-none focus:ring-0 focus:border-zinc-700">
+                </div>
+                <div id="properties-type-container" class="bg-zinc-950 flex w-full">
+                    <label class="text-sm w-1/2 text-center border border-zinc-700 font-semibold">Type</label>
+                    <input type="text" name="properties-type" id="properties-type"
+                        class="w-1/2 border border-zinc-700 focus:outline-none focus:ring-0 focus:border-zinc-700">
+                </div>
             </div>
             <div id="style-section" class="bg-zinc-900 rounded-sm shadow-lg inline-block w-full text-zinc-400 pb-1">
                 <h3 class="text-md text-center font-semibold select-none text-zinc-300">
@@ -78,7 +91,20 @@
                 </div>
                 <div id="properties-text-color-container" class="bg-zinc-950 flex w-full">
                     <label class="text-sm w-1/2 text-center border border-zinc-700 font-semibold">Text color</label>
-                    <input type="text" name="properties-text-color" id="properties-text-color"
+                    <input type="color" name="properties-text-color" id="properties-text-color"
+                        class="w-1/2 border border-zinc-700 focus:outline-none focus:ring-0 focus:border-zinc-700">
+                </div>
+                <div id="properties-background-color-container" class="bg-zinc-950 flex w-full">
+                    <label class="text-sm w-1/2 text-center border border-zinc-700 font-semibold">Background
+                        color</label>
+                    <input type="color" name="properties-background-color" id="properties-background-color"
+                        class="w-1/2 border border-zinc-700 focus:outline-none focus:ring-0 focus:border-zinc-700">
+                </div>
+                <div id="properties-background-opacity-container" class="bg-zinc-950 flex w-full">
+                    <label class="text-sm w-1/2 text-center border border-zinc-700 font-semibold">Background
+                        opacity</label>
+                    <input type="number" step="0.1" min="0" max="1" name="properties-background-opacity"
+                        id="properties-background-opacity"
                         class="w-1/2 border border-zinc-700 focus:outline-none focus:ring-0 focus:border-zinc-700">
                 </div>
             </div>

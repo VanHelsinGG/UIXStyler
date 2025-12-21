@@ -19,11 +19,15 @@ const dom = {
 // PROPERTIES DOM
 // ==============================
 const properties = {
-    type: document.querySelector('#properties-type'),
+    element: document.querySelector('#properties-element'),
     id: document.querySelector('#properties-id'),
     text: document.querySelector('#properties-text'),
     textColor: document.querySelector('#properties-text-color'),
-    fontSize: document.querySelector('#properties-font-size')
+    fontSize: document.querySelector('#properties-font-size'),
+    backgroundColor: document.querySelector('#properties-background-color'),
+    backgroundOpacity: document.querySelector('#properties-background-opacity'),
+    value: document.querySelector('#properties-value'),
+    type: document.querySelector('#properties-type')
 };
 
 // ==============================
@@ -42,13 +46,75 @@ const ELEMENT_SCHEMAS = {
         fontSize: {
             default: 16,
             apply: (el, value) => el.style.fontSize = `${value}px`
+        },
+        backgroundColor: {
+            default: '#ffffff',
+            apply: (el, value, elementState) => {
+                const opacity = elementState.styles.backgroundOpacity ?? 1;
+                el.style.backgroundColor = hexToRgba(value, opacity);
+            }
+        },
+        backgroundOpacity: {
+            default: 1,
+            apply: (el, value, elementState) => {
+                const bgColor = getComputedStyle(el).backgroundColor;
+                el.style.backgroundColor = rgbToRgba(bgColor, value);
+            }
         }
+    },
+    input: {
+        type: {
+            default: 'text',
+            apply: (el, value) => el.setAttribute('type', value)
+        },
+        textColor: {
+            default: '#000000',
+            apply: (el, value) => el.style.color = value
+        },
+        backgroundColor: {
+            default: '#ffffff',
+            apply: (el, value, elementState) => {
+                const opacity = elementState.styles.backgroundOpacity ?? 1;
+                el.style.backgroundColor = hexToRgba(value, opacity);
+            }
+        },
+        backgroundOpacity: {
+            default: 1,
+            apply: (el, value, elementState) => {
+                const bgColor = getComputedStyle(el).backgroundColor;
+                el.style.backgroundColor = rgbToRgba(bgColor, value);
+            }
+        },
+        value: {
+            default: '',
+            apply: (el, value) => el.value = value
+        },
     }
 };
 
 // ==============================
 // UTILS
 // ==============================
+function hexToRgba(hex, alpha = 1) {
+    hex = hex.replace('#', '');
+
+    if (hex.length === 3) {
+        hex = hex.split('').map(c => c + c).join('');
+    }
+
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function rgbToRgba(rgb, alpha) {
+    const rgbValues = rgb.match(/\d+/g);
+    if (!rgbValues) return rgb;
+    return `rgba(${rgbValues[0]}, ${rgbValues[1]}, ${rgbValues[2]}, ${alpha})`;
+}
+
 function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
 }
@@ -93,18 +159,12 @@ function createElement(tagName) {
 
 function createElementState(tagName, el) {
     const schema = ELEMENT_SCHEMAS[tagName] || {};
-    const styles = {};
 
-    Object.entries(schema).forEach(([key, config]) => {
-        styles[key] = config.default;
-        config.apply(el, config.default);
-    });
-
-    return {
+    const elementState = {
         id: crypto.randomUUID(),
         el,
         type: tagName,
-        styles,
+        styles: {},
         position: {
             x: 0,
             y: 0,
@@ -114,6 +174,13 @@ function createElementState(tagName, el) {
             startY: 0
         }
     };
+
+    Object.entries(schema).forEach(([key, config]) => {
+        elementState.styles[key] = config.default;
+        config.apply(el, config.default, elementState);
+    });
+
+    return elementState;
 }
 
 // ==============================
@@ -210,8 +277,8 @@ function initCanvasSelection() {
 // PROPERTIES LOGIC
 // ==============================
 function showPropertiesWindow(elementState) {
-    properties.type.value = elementState.type;
-    properties.type.disabled = true;
+    properties.element.value = elementState.type;
+    properties.element.disabled = true;
 
     properties.id.value = elementState.id;
     properties.id.disabled = true;
@@ -219,7 +286,7 @@ function showPropertiesWindow(elementState) {
     const schema = ELEMENT_SCHEMAS[elementState.type];
 
     Object.entries(properties).forEach(([key, input]) => {
-        if (key === 'type' || key === 'id') return;
+        if (key === 'element' || key === 'id') return;
 
         if (!schema[key]) {
             input.value = '';
@@ -241,7 +308,7 @@ function clearPropertiesWindow() {
 
 function initPropertiesListeners() {
     Object.entries(properties).forEach(([key, input]) => {
-        if (!input || key === 'type' || key === 'id') return;
+        if (!input || key === 'element' || key === 'id') return;
 
         input.addEventListener('input', (e) => {
             const elementState = getSelectedElementState();
@@ -251,7 +318,11 @@ function initPropertiesListeners() {
             if (!schema[key]) return;
 
             elementState.styles[key] = e.target.value;
-            schema[key].apply(elementState.el, e.target.value);
+            schema[key].apply(
+                elementState.el,
+                e.target.value,
+                elementState
+            );
         });
     });
 }
