@@ -34,6 +34,22 @@ const properties = {
 // ELEMENT SCHEMAS (CORE)
 // ==============================
 const ELEMENT_SCHEMAS = {
+    body: {
+        backgroundColor: {
+            default: '#ffffff',
+            apply: (el, value, elementState) => {
+                const opacity = elementState.styles.backgroundOpacity ?? 1;
+                el.style.backgroundColor = hexToRgba(value, opacity);
+            }
+        },
+        backgroundOpacity: {
+            default: 1,
+            apply: (el, value, elementState) => {
+                const bgColor = getComputedStyle(el).backgroundColor;
+                el.style.backgroundColor = rgbToRgba(bgColor, value);
+            }
+        }
+    },
     p: {
         text: {
             default: 'This is a paragraph',
@@ -258,7 +274,7 @@ function initCanvasSelection() {
 
         if (!target) {
             clearCanvasSelection();
-            clearPropertiesWindow();
+            
             return;
         }
 
@@ -288,20 +304,25 @@ function showPropertiesWindow(elementState) {
     Object.entries(properties).forEach(([key, input]) => {
         if (key === 'element' || key === 'id') return;
 
+        const wrapper = input.closest('.properties-wrapper');
+        if (!wrapper) return;
+
         if (!schema[key]) {
             input.value = '';
             input.disabled = true;
+            wrapper.classList.add('hidden');
             return;
         }
 
         input.disabled = false;
+        wrapper.classList.remove('hidden');
         input.value = elementState.styles[key];
     });
 }
 
 function clearPropertiesWindow() {
     Object.values(properties).forEach(input => {
-        if(input.attributes.type === 'color') {
+        if (input.attributes.type === 'color') {
             input.value = '#000000';
         } else {
             input.value = '';
@@ -338,6 +359,9 @@ function initPalette() {
     dom.paletteElements.forEach(el => {
         el.addEventListener('click', () => onPaletteElementClick(el));
     });
+
+    createElementState('body', dom.pageCanvas);
+    createElement('body');
 }
 
 initPalette();
